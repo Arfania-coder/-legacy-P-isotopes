@@ -1,0 +1,243 @@
+#!/usr/bin/env Rscript
+################################################################################
+# 03_pca_analysis.R
+# Figure 2: PCA Biplots of δ¹⁸O_P Signatures
+#
+# Reproduces Figure 2 from Arfania et al. (2026) ES&T
+# Panel A: PCA colored by Hedley P fraction
+# Panel B: PCA colored by landscape position, shaped by tillage treatment
+#
+# Three standardized variables: δ¹⁸O_P, Δδ¹⁸O_P, Soil Temperature
+################################################################################
+
+cat("=== Figure 2: PCA Analysis ===\n")
+
+# ---------------------------------------------------------------------------
+# Perform PCA on standardized variables
+# ---------------------------------------------------------------------------
+
+pca_input <- df[, c("d18Op_soil", "d18Op_deviation", "Soil_Temp_C")]
+pca_result <- PCA(pca_input, scale.unit = TRUE, graph = FALSE)
+
+# Extract eigenvalues
+eigenvalues <- get_eigenvalue(pca_result)
+pc1_pct <- round(eigenvalues[1, 2], 1)
+pc2_pct <- round(eigenvalues[2, 2], 1)
+cum_pct <- round(eigenvalues[2, 3], 1)
+
+cat(sprintf("  PC1: %.1f%% | PC2: %.1f%% | Cumulative: %.1f%%\n",
+            pc1_pct, pc2_pct, cum_pct))
+
+# Save eigenvalues and loadings
+write.csv(eigenvalues,
+          file.path(OUTPUT_DIR, "PCA_results/Eigenvalues.csv"),
+          row.names = TRUE)
+write.csv(pca_result$var$coord,
+          file.path(OUTPUT_DIR, "PCA_results/Variable_Loadings.csv"),
+          row.names = TRUE)
+
+# Extract coordinates
+ind_coords <- as.data.frame(pca_result$ind$coord)
+var_coords <- as.data.frame(pca_result$var$coord)
+
+ind_coords$Fraction  <- df$Fraction
+ind_coords$Position  <- df$Position
+ind_coords$Treatment <- df$Treatment
+
+# Save individual scores
+scores_out <- cbind(
+  df[, c("Fraction", "Treatment", "Position", "Date")],
+  ind_coords[, c("Dim.1", "Dim.2")]
+)
+write.csv(scores_out,
+          file.path(OUTPUT_DIR, "PCA_results/PCA_Scores.csv"),
+          row.names = FALSE)
+
+# ---------------------------------------------------------------------------
+# Arrow scaling (matching fviz_pca_biplot internal scaling)
+# ---------------------------------------------------------------------------
+
+r_x <- diff(range(ind_coords$Dim.1)) / diff(range(var_coords$Dim.1))
+r_y <- diff(range(ind_coords$Dim.2)) / diff(range(var_coords$Dim.2))
+scale_f <- min(r_x, r_y) * 0.7
+
+arrows_df <- data.frame(
+  xend = var_coords$Dim.1 * scale_f,
+  yend = var_coords$Dim.2 * scale_f
+)
+
+# Common axis limits
+x_lim <- range(ind_coords$Dim.1) + c(-0.5, 0.5)
+y_lim <- range(ind_coords$Dim.2) + c(-0.5, 0.5)
+
+# ---------------------------------------------------------------------------
+# Panel A: PCA by Fraction
+# ---------------------------------------------------------------------------
+
+cat("  Creating Panel A (by Fraction)...\n")
+
+panelA <- ggplot(ind_coords, aes(x = Dim.1, y = Dim.2)) +
+  
+  # 95% confidence ellipses
+  stat_ellipse(aes(color = Fraction, fill = Fraction),
+               type = "norm", level = 0.95,
+               geom = "polygon", alpha = 0.12, linewidth = 0.6) +
+  
+  # Points
+  geom_point(aes(color = Fraction, shape = Fraction),
+             size = 2.5, alpha = 0.85) +
+  
+  # Reference lines
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
+  
+  # Biplot arrows
+  geom_segment(data = arrows_df,
+               aes(x = 0, y = 0, xend = xend, yend = yend),
+               arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+               color = "black", linewidth = 0.6,
+               inherit.aes = FALSE) +
+  
+  # Arrow labels
+  annotate("text", x = arrows_df$xend[1] * 1.15,
+           y = arrows_df$yend[1] * 1.15 - 0.15,
+           label = expression(delta^{18}*O[P]), size = 3.5, color = "black") +
+  annotate("text", x = arrows_df$xend[2] * 1.15,
+           y = arrows_df$yend[2] * 1.15 + 0.15,
+           label = expression(Delta*delta^{18}*O[P]), size = 3.5, color = "black") +
+  annotate("text", x = arrows_df$xend[3] * 1.1 - 0.15,
+           y = arrows_df$yend[3] * 1.1,
+           label = expression(T~(degree*C)), size = 3.5, color = "black") +
+  
+  # Scales
+  scale_color_manual(values = colors_fraction, name = "P Fraction",
+                     labels = c(expression(H[2]*O~"-"~P),
+                                expression(NaHCO[3]~"-"~P),
+                                expression(NaOH~"-"~P),
+                                expression(HNO[3]~"-"~P))) +
+  scale_fill_manual(values = colors_fraction, name = "P Fraction",
+                    labels = c(expression(H[2]*O~"-"~P),
+                               expression(NaHCO[3]~"-"~P),
+                               expression(NaOH~"-"~P),
+                               expression(HNO[3]~"-"~P))) +
+  scale_shape_manual(values = c("DI" = 16, "NaHCO3" = 17, "NaOH" = 15, "HNO3" = 4),
+                     name = "P Fraction",
+                     labels = c(expression(H[2]*O~"-"~P),
+                                expression(NaHCO[3]~"-"~P),
+                                expression(NaOH~"-"~P),
+                                expression(HNO[3]~"-"~P))) +
+  
+  labs(x = paste0("PC1 (", pc1_pct, "%)"),
+       y = paste0("PC2 (", pc2_pct, "%)")) +
+  coord_cartesian(xlim = x_lim, ylim = y_lim) +
+  annotate("text", x = -Inf, y = Inf, label = "A",
+           hjust = -0.3, vjust = 1.3, size = 7, fontface = "bold") +
+  theme_est() +
+  theme(legend.text.align = 0, legend.key.size = unit(0.5, "cm"))
+
+# ---------------------------------------------------------------------------
+# Panel B: PCA by Position + Treatment
+# ---------------------------------------------------------------------------
+
+cat("  Creating Panel B (by Position/Treatment)...\n")
+
+panelB <- ggplot(ind_coords, aes(x = Dim.1, y = Dim.2)) +
+  
+  # 95% confidence ellipses by position
+  stat_ellipse(aes(color = Position, fill = Position),
+               type = "norm", level = 0.95,
+               geom = "polygon", alpha = 0.12, linewidth = 0.6) +
+  
+  # Points: color = position, shape = treatment
+  geom_point(aes(color = Position, shape = Treatment),
+             size = 2.5, alpha = 0.85) +
+  
+  # Reference lines
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
+  
+  # Same biplot arrows as Panel A
+  geom_segment(data = arrows_df,
+               aes(x = 0, y = 0, xend = xend, yend = yend),
+               arrow = arrow(length = unit(0.2, "cm"), type = "closed"),
+               color = "black", linewidth = 0.6,
+               inherit.aes = FALSE) +
+  
+  # Arrow labels
+  annotate("text", x = arrows_df$xend[1] * 1.15,
+           y = arrows_df$yend[1] * 1.15 - 0.15,
+           label = expression(delta^{18}*O[P]), size = 3.5, color = "black") +
+  annotate("text", x = arrows_df$xend[2] * 1.15,
+           y = arrows_df$yend[2] * 1.15 + 0.15,
+           label = expression(Delta*delta^{18}*O[P]), size = 3.5, color = "black") +
+  annotate("text", x = arrows_df$xend[3] * 1.1 - 0.15,
+           y = arrows_df$yend[3] * 1.1,
+           label = expression(T~(degree*C)), size = 3.5, color = "black") +
+  
+  # Scales
+  scale_color_manual(values = colors_position, name = "Position") +
+  scale_fill_manual(values = colors_position, name = "Position") +
+  scale_shape_manual(values = c("Conv. Tillage" = 17, "No-Till" = 16),
+                     name = "Treatment") +
+  
+  labs(x = paste0("PC1 (", pc1_pct, "%)"),
+       y = paste0("PC2 (", pc2_pct, "%)")) +
+  coord_cartesian(xlim = x_lim, ylim = y_lim) +
+  annotate("text", x = -Inf, y = Inf, label = "B",
+           hjust = -0.3, vjust = 1.3, size = 7, fontface = "bold") +
+  theme_est() +
+  theme(legend.key.size = unit(0.5, "cm"))
+
+# ---------------------------------------------------------------------------
+# Combined two-panel figure
+# ---------------------------------------------------------------------------
+
+cat("  Combining panels...\n")
+
+fig2_combined <- grid.arrange(panelA, panelB, ncol = 2, widths = c(1, 1))
+
+# Save combined figure
+base <- file.path(OUTPUT_DIR, "figures/Figure2_PCA_Biplot")
+pdf(paste0(base, ".pdf"), width = 14, height = 6)
+grid.arrange(panelA, panelB, ncol = 2, widths = c(1, 1))
+invisible(dev.off())
+
+png(paste0(base, ".png"), width = 14, height = 6, units = "in", res = 300)
+grid.arrange(panelA, panelB, ncol = 2, widths = c(1, 1))
+invisible(dev.off())
+
+tiff(paste0(base, ".tiff"), width = 14, height = 6, units = "in", res = 600,
+     compression = "lzw")
+grid.arrange(panelA, panelB, ncol = 2, widths = c(1, 1))
+invisible(dev.off())
+
+# Also save individual panels
+ggsave(file.path(OUTPUT_DIR, "figures/Figure2A_PCA_Fraction.pdf"),
+       panelA, width = 8, height = 6)
+ggsave(file.path(OUTPUT_DIR, "figures/Figure2B_PCA_Position.pdf"),
+       panelB, width = 8, height = 6)
+
+cat("  Saved: Figure2_PCA_Biplot (.pdf, .png, .tiff)\n")
+
+# ---------------------------------------------------------------------------
+# Mean PCA scores by fraction (for manuscript text)
+# ---------------------------------------------------------------------------
+
+mean_scores <- scores_out %>%
+  group_by(Fraction) %>%
+  summarise(
+    Mean_PC1 = round(mean(Dim.1), 3),
+    SD_PC1   = round(sd(Dim.1), 3),
+    Mean_PC2 = round(mean(Dim.2), 3),
+    SD_PC2   = round(sd(Dim.2), 3),
+    .groups  = "drop"
+  )
+
+cat("\n  Mean PCA scores by fraction:\n")
+print(mean_scores)
+
+write.csv(mean_scores,
+          file.path(OUTPUT_DIR, "PCA_results/Mean_Scores_by_Fraction.csv"),
+          row.names = FALSE)
+
+cat("  Figure 2 complete\n\n")
