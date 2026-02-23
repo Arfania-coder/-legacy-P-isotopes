@@ -1,49 +1,50 @@
-Treatment,Fraction,Position,Date,d18Op_soil,Soil_Temp_C,d18Op_equilibrium,d18Op_deviation
-NT,DI,Top,Dec,14.735,2.0,10.945,3.79
-NT,DI,Top,Jan,12.52,0.2,11.75,0.77
-NT,DI,Top,Feb,15.805,2.5,11.425,4.38
-NT,NaHCO3,Top,Dec,15.98,2.0,10.94,5.04
-NT,NaHCO3,Top,Jan,14.94,0.2,11.75,3.19
-NT,NaHCO3,Top,Feb,16.3,2.5,11.42,4.88
-NT,NaOH,Top,Dec,15.185,2.0,10.945,4.24
-NT,NaOH,Top,Jan,16.32,0.2,11.75,4.57
-NT,NaOH,Top,Feb,18.01,2.5,11.42,6.59
-NT,HNO3,Top,Dec,9.89,2.0,10.94,-1.05
-NT,HNO3,Top,Jan,10.205,0.2,11.755,-1.55
-NT,HNO3,Top,Feb,9.925,2.5,11.425,-1.50
-NT,DI,Toe,Dec,15.5,2.0,10.94,4.56
-NT,DI,Toe,Jan,15.465,0.2,11.625,3.84
-NT,DI,Toe,Feb,16.185,2.5,12.295,3.89
-NT,NaHCO3,Toe,Dec,13.69,2.0,10.94,2.75
-NT,NaHCO3,Toe,Jan,14.74,0.2,11.62,3.12
-NT,NaHCO3,Toe,Feb,16.7,2.5,12.3,4.40
-NT,NaOH,Toe,Dec,17.96,2.0,10.94,7.02
-NT,NaOH,Toe,Jan,17.025,0.2,11.625,5.40
-NT,NaOH,Toe,Feb,18.35,2.5,12.3,6.05
-NT,HNO3,Toe,Dec,9.78,2.0,10.94,-1.16
-NT,HNO3,Toe,Jan,9.745,0.2,11.625,-1.88
-NT,HNO3,Toe,Feb,9.0,2.5,12.3,-3.30
-CT,DI,Top,Dec,15.03,2.0,10.89,4.14
-CT,DI,Top,Jan,13.32,0.2,12.36,0.96
-CT,DI,Top,Feb,14.55,2.5,11.89,2.66
-CT,NaHCO3,Top,Dec,16.97,2.0,10.89,6.08
-CT,NaHCO3,Top,Jan,14.94,0.2,12.36,2.58
-CT,NaHCO3,Top,Feb,15.39,2.5,11.89,3.50
-CT,NaOH,Top,Dec,15.825,2.0,10.895,4.93
-CT,NaOH,Top,Jan,15.32,0.2,12.36,2.96
-CT,NaOH,Top,Feb,16.14,2.5,11.89,4.25
-CT,HNO3,Top,Dec,7.69,2.0,10.89,-3.20
-CT,HNO3,Top,Jan,9.34,0.2,12.36,-3.02
-CT,HNO3,Top,Feb,10.86,2.5,11.89,-1.03
-CT,DI,Toe,Dec,16.255,2.0,10.995,5.26
-CT,DI,Toe,Jan,14.78,0.2,11.62,3.16
-CT,DI,Toe,Feb,16.11,2.5,12.71,3.40
-CT,NaHCO3,Toe,Dec,16.49,2.0,10.99,5.50
-CT,NaHCO3,Toe,Jan,14.74,0.2,11.62,3.12
-CT,NaHCO3,Toe,Feb,17.195,2.5,12.715,4.48
-CT,NaOH,Toe,Dec,14.19,2.0,10.99,3.20
-CT,NaOH,Toe,Jan,16.35,0.2,11.62,4.73
-CT,NaOH,Toe,Feb,17.025,2.5,12.715,4.31
-CT,HNO3,Toe,Dec,9.36,2.0,10.99,-1.63
-CT,HNO3,Toe,Jan,10.32,0.2,11.62,-1.30
-CT,HNO3,Toe,Feb,10.1,2.5,12.71,-2.61
+#!/usr/bin/env Rscript
+################################################################################
+# run_all.R
+# Master Script to Reproduce All Analyses and Figures
+#
+# Arfania, H., Kayler, Z., Strawn, D., Brooks, E., & Laan, M. (2026)
+# "Functional Decoupling of Active and Legacy Phosphorus Pools
+#  Revealed by Phosphate Oxygen Isotopes (δ¹⁸O_P)"
+# Environmental Science & Technology
+#
+# Usage:
+#   source("R/run_all.R")
+#   # or from terminal: Rscript R/run_all.R
+################################################################################
+
+cat("\n")
+cat("================================================================\n")
+cat("  Arfania et al. (2026) ES&T - Full Analysis Pipeline\n")
+cat("  Legacy Phosphorus Isotope Analysis\n")
+cat("================================================================\n\n")
+
+start_time <- Sys.time()
+
+# Run scripts in order
+source("R/00_setup.R")
+source("R/01_data_preparation.R")
+source("R/02_isotope_analysis.R")
+source("R/03_pca_analysis.R")
+source("R/04_bayesian_model.R")
+source("R/05_conceptual_figure.R")
+
+# Summary
+elapsed <- round(difftime(Sys.time(), start_time, units = "secs"), 1)
+
+cat("================================================================\n")
+cat("  Analysis Complete\n")
+cat("================================================================\n\n")
+
+cat("Figures generated:\n")
+cat("  Figure 1: Isotope deviations across fractions and landscapes\n")
+cat("  Figure 2: PCA biplots (A: by fraction; B: by position/tillage)\n")
+cat("  Figure 3: Bayesian transformation model (4 panels)\n")
+cat("  Figure 4: Two-domain conceptual model\n\n")
+
+cat("Output directory: output/\n")
+cat(sprintf("  Figures: %d files\n", length(list.files("output/figures"))))
+cat(sprintf("  Tables:  %d files\n", length(list.files("output/tables"))))
+cat(sprintf("  PCA:     %d files\n", length(list.files("output/PCA_results"))))
+cat(sprintf("\nTotal time: %s seconds\n", elapsed))
+cat("================================================================\n")
