@@ -1,124 +1,34 @@
-#!/usr/bin/env Rscript
-################################################################################
-# 05_conceptual_figure.R
-# Figure 4: Two-Domain Conceptual Model
-#
-# Reproduces Figure 4 from Arfania et al. (2026) ES&T
-# Conceptual diagram showing:
-#   - Active domain (H₂O-P, NaHCO₃-P, NaOH-P): high Δδ¹⁸O_P deviation
-#   - Legacy domain (HNO₃-P): near-equilibrium Δδ¹⁸O_P
-#   - Enzymatic processing pathways
-#
-# Note: This generates a schematic figure using base R graphics.
-# For the final publication, this figure may be refined in
-# Adobe Illustrator or similar software.
-################################################################################
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "R code for Functional Decoupling of Active and Legacy Phosphorus Pools Revealed by Phosphate Oxygen Isotopes"
+type: software
 
-cat("=== Figure 4: Two-Domain Conceptual Model ===\n")
+authors:
+  - family-names: Arfania
+    given-names: Hamed
+    affiliation: University of Florida, Everglades Research and Education Center
 
-# ---------------------------------------------------------------------------
-# Conceptual figure: Two-domain model
-# ---------------------------------------------------------------------------
+  - family-names: Kayler
+    given-names: Zachary
+    affiliation: University of Idaho
 
-create_conceptual_figure <- function() {
-  
-  par(mar = c(2, 2, 3, 2), family = "serif")
-  
-  plot(NULL, xlim = c(0, 10), ylim = c(0, 8),
-       xaxt = "n", yaxt = "n", xlab = "", ylab = "",
-       main = "", bty = "n")
-  
-  title(main = "Two-Domain Conceptual Model of Phosphorus Cycling",
-        cex.main = 1.5, font.main = 2, line = 1)
-  
-  # --- Active Domain (left side) ---
-  rect(0.5, 1.5, 5.5, 7, col = adjustcolor("#4393C3", alpha.f = 0.15),
-       border = "#2166AC", lwd = 2, lty = 1)
-  text(3, 7.3, "ACTIVE DOMAIN", cex = 1.3, font = 2, col = "#2166AC")
-  text(3, 6.8, expression(Delta*delta^{18}*O[P] == "+3.4 to +4.9\u2030"),
-       cex = 0.95, col = "#2166AC")
-  text(3, 6.45, "Transformation P > 70%", cex = 0.85, font = 3, col = "#2166AC")
-  
-  # Active fraction boxes
-  active_fracs <- data.frame(
-    label = c(expression(H[2]*O ~ "-" ~ P), expression(NaHCO[3] ~ "-" ~ P), expression(NaOH ~ "-" ~ P)),
-    x = c(1.5, 3, 4.5),
-    y = c(4, 5.5, 3.5),
-    col = c("#2166AC", "#762A83", "#5AAE61"),
-    dev = c("+3.4\u2030", "+4.1\u2030", "+4.9\u2030")
-  )
-  
-  for (i in 1:3) {
-    rect(active_fracs$x[i] - 0.7, active_fracs$y[i] - 0.5,
-         active_fracs$x[i] + 0.7, active_fracs$y[i] + 0.5,
-         col = adjustcolor(active_fracs$col[i], alpha.f = 0.3),
-         border = active_fracs$col[i], lwd = 2)
-    text(active_fracs$x[i], active_fracs$y[i] + 0.15,
-         active_fracs$label[i], cex = 0.85, font = 2)
-    text(active_fracs$x[i], active_fracs$y[i] - 0.25,
-         active_fracs$dev[i], cex = 0.75, col = active_fracs$col[i])
-  }
-  
-  # Bidirectional arrows between active fractions
-  arrows(2.2, 4.5, 2.6, 5.1, lwd = 2, col = "grey40", length = 0.08)
-  arrows(2.6, 4.9, 2.2, 4.3, lwd = 2, col = "grey40", length = 0.08)
-  arrows(3.4, 5.1, 3.8, 4.1, lwd = 2, col = "grey40", length = 0.08)
-  arrows(3.8, 3.9, 3.4, 4.9, lwd = 2, col = "grey40", length = 0.08)
-  arrows(2.2, 3.7, 3.8, 3.5, lwd = 2, col = "grey40", length = 0.08)
-  arrows(3.8, 3.3, 2.2, 3.5, lwd = 2, col = "grey40", length = 0.08)
-  
-  # Extracellular phosphatase annotation
-  text(3, 2.2, "Extracellular\nPhosphatase", cex = 0.8, font = 3, col = "#333333")
-  text(3, 1.7, "(1/4 O exchanged per event)", cex = 0.7, col = "#666666")
-  
-  # --- Legacy Domain (right side) ---
-  rect(6.5, 2, 9.5, 6.5, col = adjustcolor("#D6604D", alpha.f = 0.15),
-       border = "#D6604D", lwd = 2, lty = 1)
-  text(8, 6.8, "LEGACY DOMAIN", cex = 1.3, font = 2, col = "#B2182B")
-  text(8, 6.3, expression(Delta*delta^{18}*O[P] == "-1.9\u2030"),
-       cex = 0.95, col = "#B2182B")
-  text(8, 5.95, "Exchange P < 11%", cex = 0.85, font = 3, col = "#B2182B")
-  
-  # Legacy fraction box
-  rect(7.0, 3.5, 9.0, 5.0,
-       col = adjustcolor("#D6604D", alpha.f = 0.3),
-       border = "#D6604D", lwd = 2)
-  text(8, 4.5, expression(HNO[3] ~ "-" ~ P), cex = 1.0, font = 2)
-  text(8, 4.0, "Ca-bound Legacy P", cex = 0.8, col = "#B2182B")
-  text(8, 3.7, "-1.9 \u00B1 0.9\u2030", cex = 0.75, col = "#D6604D")
-  
-  # Mineral stabilization annotation
-  text(8, 2.8, "Intracellular equilibration", cex = 0.75, font = 3, col = "#333333")
-  text(8, 2.4, expression("" %->% " mineral stabilization"), cex = 0.75, col = "#666666")
-  
-  # --- Barrier arrow (thin, dashed) between domains ---
-  arrows(5.7, 4.5, 6.8, 4.5, lwd = 1.5, col = "#999999", lty = 2, length = 0.1)
-  text(6.25, 4.9, "<11%", cex = 0.8, font = 2, col = "#999999")
-  text(6.25, 4.15, "Biogeochemical\nBarrier", cex = 0.7, font = 3, col = "#999999")
-  
-  # --- Equilibrium reference ---
-  segments(0.5, 0.8, 9.5, 0.8, lwd = 1, lty = 3, col = "red")
-  text(5, 0.5, expression("Equilibrium" ~ (Delta*delta^{18}*O[P] == "0\u2030")),
-       cex = 0.85, col = "red", font = 3)
-}
+  - family-names: Strawn
+    given-names: Daniel
+    affiliation: University of Idaho
 
-# Save
-base <- file.path(OUTPUT_DIR, "figures/Figure4_TwoDomain_Conceptual")
+  - family-names: Brooks
+    given-names: Erin
+    affiliation: University of Idaho
 
-pdf(paste0(base, ".pdf"), width = 10, height = 8, family = "serif")
-create_conceptual_figure()
-invisible(dev.off())
+  - family-names: Laan
+    given-names: Magg
+    affiliation: University of Idaho
 
-png(paste0(base, ".png"), width = 10, height = 8, units = "in", res = 300)
-par(family = "serif")
-create_conceptual_figure()
-invisible(dev.off())
+repository-code: https://github.com/Arfania-coder/legacy-P-isotopes
+license: MIT
 
-tiff(paste0(base, ".tiff"), width = 10, height = 8, units = "in", res = 600,
-     compression = "lzw")
-par(family = "serif")
-create_conceptual_figure()
-invisible(dev.off())
-
-cat("  Saved: Figure4_TwoDomain_Conceptual (.pdf, .png, .tiff)\n")
-cat("  Figure 4 complete\n\n")
+keywords:
+  - phosphate oxygen isotopes
+  - legacy phosphorus
+  - soil biogeochemistry
+  - isotope tracing
